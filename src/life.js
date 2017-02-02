@@ -67,12 +67,12 @@ var create = function(spawn) {
         return factory(spawn, 'small-harvester');
     }
 
-    if(inRoom.builder < targets.economy.builder) {
-        return factory(spawn, 'builder');
-    }
-
     if(inRoom.harvester < targets.economy.harvester) {
         return factory(spawn,'harvester');
+    }
+
+    if(inRoom.builder < targets.economy.builder) {
+        return factory(spawn, 'builder');
     }
 
     if(inRoom.maintainer < targets.economy.maintainer) {
