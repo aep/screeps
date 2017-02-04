@@ -1,8 +1,6 @@
 var targets = {
     economy: {
-        harvester:  3,
-        builder:    3,
-        maintainer: 0,
+        worker:    6,
     },
     army: {
         brawler:   0,
@@ -14,13 +12,11 @@ var targets = {
 var factory = function(spawn : StructureSpawn, role: string) {
     var r = null;
     switch (role) {
-        case 'small-harvester':
-            r = spawn.createCreep([WORK, CARRY, MOVE], undefined, {role: 'harvester'});
+        case 'small-worker':
+            r = spawn.createCreep([WORK, CARRY, MOVE], undefined, {role: 'worker'});
             break;
-        case 'builder':
-        case 'harvester':
-        case 'maintainer':
-            r = spawn.createCreep([WORK,WORK,CARRY,CARRY,MOVE,MOVE], undefined, {role: role});
+        case 'worker':
+            r = spawn.createCreep([WORK,WORK,WORK,WORK,CARRY,CARRY,CARRY,MOVE,MOVE,MOVE], undefined, {role: role});
             break;
         case 'brawler':
             r =spawn.createCreep([ATTACK,ATTACK,ATTACK,TOUGH,TOUGH,MOVE,MOVE,MOVE], undefined, {role: 'brawler'});
@@ -64,19 +60,11 @@ var create = function(spawn : StructureSpawn) {
 
     //first creep must be harvester
     if (inRoom.harvester == 0) {
-        return factory(spawn, 'small-harvester');
+        return factory(spawn, 'small-worker');
     }
 
-    if(inRoom.harvester < targets.economy.harvester) {
-        return factory(spawn,'harvester');
-    }
-
-    if(inRoom.builder < targets.economy.builder) {
-        return factory(spawn, 'builder');
-    }
-
-    if(inRoom.maintainer < targets.economy.maintainer) {
-        return factory(spawn,'maintainer');
+    if(inRoom.worker < targets.economy.worker) {
+        return factory(spawn, 'worker');
     }
 
     if (spawn.name == 'Spawn1') {

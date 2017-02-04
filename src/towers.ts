@@ -10,7 +10,7 @@ export var main = function() {
             tower.attack(closestHostile);
         }
         var closestDamagedStructure = tower.pos.findClosestByRange(FIND_STRUCTURES, {
-            filter: (structure : Structure) => structure.hits < structure.hitsMax
+            filter: (structure : Structure) => structure.hits < structure.hitsMax && structure.hits < 10000
         }) as Structure;
         if(closestDamagedStructure) {
             tower.repair(closestDamagedStructure);

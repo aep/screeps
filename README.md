@@ -8,3 +8,4 @@ here's the boilerplate.
 
 
 the type definitions are in src/screeps.ts
+

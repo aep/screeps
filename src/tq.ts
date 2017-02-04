@@ -1,3 +1,5 @@
+import {RoomWithEconomy} from './economy'
+
 export enum TaskIs{
     Running,
     Done,
@@ -5,13 +7,16 @@ export enum TaskIs{
 }
 
 
-interface StoredTask {
-    task: string
+export interface Todo {
+    task:       string;
+    target:     string;
+    priority:   number;
 }
+
 
 interface Task {
     make(creep: Creep): any;
-    run(creep: Creep, stored: StoredTask):  TaskIs;
+    run(creep: Creep, stored: Todo):  TaskIs;
 }
 
 export var Tasks : {[key:string]:Task} = {};
@@ -29,7 +34,7 @@ class TaskQueue {
         }
     }
 
-    add(task: StoredTask) {
+    add(task: Todo) {
         this.creep.memory.tq.unshift(task);
     }
     run() {
@@ -37,7 +42,7 @@ class TaskQueue {
             return TaskIs.Idle;
         }
 
-        var task : StoredTask = this.creep.memory.tq[this.creep.memory.tq.length - 1];
+        var task : Todo = this.creep.memory.tq[this.creep.memory.tq.length - 1];
         if (!Tasks[task.task]) {
             this.creep.memory.tq.pop();
         } else {
@@ -67,31 +72,18 @@ export var main = function() {
 
         if (cq.run() === TaskIs.Idle) {
             switch (creep.memory.role) {
-                case 'upgrader':
+                case 'worker':
                     if (creep.carry.energy == 0) {
                         cq.add(Tasks['harvest'].make(creep));
+                        continue;
+                    }
+                    let tt = (creep.room as RoomWithEconomy).economy.todo.shift();
+                    if (tt) {
+                        cq.add(tt)
+                    } else {
+                        cq.add(Tasks['upgrade'].make(creep));
                     }
 
-                    cq.add(Tasks['upgrade'].make(creep));
-
-                case 'harvester':
-                    if (creep.carry.energy == 0) {
-                        cq.add(Tasks['harvest'].make(creep));
-                    }
-
-                    cq.add(Tasks['deliver'].make(creep) || Tasks['upgrade'].make(creep));
-                    break;
-                case 'builder':
-                    if (creep.carry.energy == 0) {
-                        cq.add(Tasks['harvest'].make(creep));
-                    }
-                    cq.add(Tasks['build'].make(creep) || Tasks['upgrade'].make(creep));
-                    break;
-                case 'maintainer':
-                    if (creep.carry.energy == 0) {
-                        cq.add(Tasks['harvest'].make(creep));
-                    }
-                    cq.add(Tasks['repair'].make(creep) || Tasks['upgrade'].make(creep));
                     break;
             }
         }

@@ -158,7 +158,6 @@ interface RoomObject {
     room: Room
 }
 
-
 interface Source extends RoomObject {
     energy: number;
     energyCapacity:number;
@@ -241,6 +240,11 @@ interface StructureSpawn extends OwnedStructure {
 
     canCreateCreep (body : [BodyPart], name: string) : StatusCode;
     createCreep    (body : [BodyPart], name: string, memory: any) : string|StatusCode;
+}
+
+interface StructureExtension extends OwnedStructure{
+    energy:         number;
+    energyCapacity: number;
 }
 
 interface StructureTower extends OwnedStructure {

@@ -2,7 +2,6 @@ var credentials = require('./credentials.js');
 
 module.exports = function(grunt) {
 
-
     grunt.loadNpmTasks("grunt-ts");
     grunt.loadNpmTasks('grunt-screeps');
     grunt.loadNpmTasks('grunt-contrib-copy');

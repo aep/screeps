@@ -13,6 +13,7 @@ function hashCode (str : string) {
     return Math.abs(hash);
 };
 
+
 Tasks['harvest'] = {
     make: function(creep : Creep) {
         var room    = creep.room;
@@ -33,7 +34,7 @@ Tasks['harvest'] = {
     }
 }
 
-Tasks['deliver'] = {
+Tasks['transfer'] = {
     make: function(creep: Creep) {
         var targets = creep.room.find(FIND_STRUCTURES, {
             filter: (structure: StructureSpawn | StructureTower) => {
@@ -49,7 +50,7 @@ Tasks['deliver'] = {
 
         var target = targets[Math.floor(Math.random() * targets.length)];
 
-        return {task:'deliver', target: target.id}
+        return {task:'transfer', target: target.id}
     },
     run: function(creep : Creep, dt : any) {
         if (creep.carry.energy <= 0) {
@@ -63,13 +64,23 @@ Tasks['deliver'] = {
         }
 
         if (target.energy >= target.energyCapacity) {
+            console.log("transfer: ",target,"already charged");
             return TaskIs.Done;
         }
 
-        if(creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(target);
+        let r = creep.transfer(target, RESOURCE_ENERGY);
+        switch (r) {
+            case ERR_NOT_IN_RANGE: {
+                creep.moveTo(target);
+                break;
+            }
+            case OK: {
+                break;
+            }
+            default: {
+                console.log("[panic] creep.transfer: ", r);
+            }
         }
-
         return TaskIs.Running;
     }
 }
@@ -119,7 +130,7 @@ Tasks['repair'] = {
 
         var target = targets[Math.floor(Math.random() * targets.length)];
 
-        return {task:'build', target: target.id}
+        return {task:'repair', target: target.id}
     },
     run: function(creep : Creep, dt : any) {
         if (creep.carry.energy <= 0) {
