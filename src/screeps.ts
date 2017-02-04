@@ -148,7 +148,8 @@ interface RoomPosition {
     x:          number;
     y:          number;
 
-    findClosestByRange(typeOrObjects : FindOp | [RoomPosition], opts?: FilterOpts): RoomObject;
+    findClosestByRange(find: FindOp | [RoomPosition], opts?: FilterOpts): RoomObject;
+    findClosestByPath(find: FindOp | [RoomPosition], opts?: FilterOpts): RoomObject;
 }
 
 type Path = string;
@@ -172,7 +173,6 @@ interface Mineral extends RoomObject {
     id: string;
     ticksToRegeneration: number;
 }
-
 
 interface Resource extends RoomObject {
     amount: number;
@@ -255,6 +255,14 @@ interface StructureTower extends OwnedStructure {
     heal(target:  Creep):       StatusCode;
     repair(target: Structure):  StatusCode;
     transferEnergy(target : Creep, amount? : number) : StatusCode;
+}
+
+interface StructureContainer extends OwnedStructure {
+    store:              Carry;
+    storeCapacity:      number;
+    ticksToDecay:       number;
+
+    transfer(target: Creep, resourceType : ResourceType, amount?: number): StatusCode;
 }
 
 interface Room {

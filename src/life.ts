@@ -1,22 +1,20 @@
-var targets = {
-    economy: {
-        worker:    6,
-    },
-    army: {
-        brawler:   0,
-        claimer:   0,
-    }
-}
-
+var build = [
+    {roles: {worker: 3}},
+    {roles: {worker: 3, miner:  1}},
+    {roles: {worker: 4, miner:  1}},
+    {roles: {worker: 6, miner:  2}},
+    {roles: {worker: 6, miner:  2, stop: 1}}
+]
 
 var factory = function(spawn : StructureSpawn, role: string) {
     var r = null;
     switch (role) {
-        case 'small-worker':
-            r = spawn.createCreep([WORK, CARRY, MOVE], undefined, {role: 'worker'});
+        case 'miner':
+            r = spawn.createCreep([WORK,WORK,WORK,WORK,WORK,WORK,MOVE], undefined, {role: role});
             break;
         case 'worker':
-            r = spawn.createCreep([WORK,WORK,WORK,WORK,CARRY,CARRY,CARRY,MOVE,MOVE,MOVE], undefined, {role: role});
+            //TODO: do something else if we have no creeps and not enough energy
+            r = spawn.createCreep([WORK,WORK,WORK,CARRY,CARRY,CARRY,MOVE,MOVE,MOVE], undefined, {role: role});
             break;
         case 'brawler':
             r =spawn.createCreep([ATTACK,ATTACK,ATTACK,TOUGH,TOUGH,MOVE,MOVE,MOVE], undefined, {role: 'brawler'});
@@ -45,35 +43,20 @@ var create = function(spawn : StructureSpawn) {
         }
     }
 
-    var dbgs = '';
-    for (var t in targets.economy) {
-        if (inRoom[t] == undefined) {inRoom[t] = 0}
-        dbgs += t + ': ' + inRoom[t].toString() + '/' + targets.economy[t].toString() + ' ';
-    }
-    dbgs += "| ";
-    for (var t in targets.army) {
-        if (inGame[t] == undefined) {inGame[t] = 0}
-        dbgs += t + ': ' + inGame[t].toString() + '/' + targets.army[t].toString() + ' ';
-    }
 
-    console.log(spawn, dbgs)
+    for (let i in  build) {
+        let stage = build[i];
+        for (let role in stage.roles) {
+            if (inRoom[role] < stage.roles[role]) {
+                var dbgs = '';
+                for (var t in stage.roles) {
+                    if (inRoom[t] == undefined) {inRoom[t] = 0}
+                    dbgs += t + ': ' + inRoom[t].toString() + '/' + stage.roles[t].toString() + ' ';
+                }
+                console.log(spawn, 'stage', i, dbgs);
 
-    //first creep must be harvester
-    if (inRoom.harvester == 0) {
-        return factory(spawn, 'small-worker');
-    }
-
-    if(inRoom.worker < targets.economy.worker) {
-        return factory(spawn, 'worker');
-    }
-
-    if (spawn.name == 'Spawn1') {
-        if(inGame.brawler < targets.army.brawler) {
-            return factory(spawn,'brawler');
-        }
-
-        if(inGame.claimer < targets.army.claimer) {
-            return factory(spawn,'claimer');
+                return factory(spawn, role);
+            }
         }
     }
 }
@@ -81,8 +64,14 @@ var create = function(spawn : StructureSpawn) {
 var gc = function() {
     for(var name in Memory.creeps) {
         if(!Game.creeps[name]) {
-            delete Memory.creeps[name];
             console.log('Clearing non-existing creep memory:', name);
+            let assigned = Memory.assigned;
+            for (let j in assigned) {
+                if (assigned.creep == name) {
+                    delete assigned[j];
+                }
+            }
+            delete Memory.creeps[name];
         }
     }
 }

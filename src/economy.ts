@@ -8,6 +8,7 @@ class Economy {
     todo: Todo[];
 
     constructor(room: RoomWithEconomy) {
+
         this.todo = []
 
         //priority issues
@@ -59,13 +60,22 @@ class Economy {
         })
 
         console.log(room, "current task list:");
-        for (let todo of this.todo) {
-            console.log("  - ", todo.task, Game.getObjectById(todo.target));
+        for (let i in this.todo) {
+            let todo = this.todo[i];
+            let assigned  = Memory.assigned[todo.target] ? Memory.assigned[todo.target].creep : null;
+            console.log("  - ", todo.task, Game.getObjectById(todo.target), assigned);
+            if (Memory.assigned[todo.target] != null) {
+                this.todo[i] = null;
+            }
         }
+
+        //remove deleted
+        this.todo = this.todo.filter(Boolean);
     }
 }
 
 export var main = function() {
+    if (Memory.assigned == undefined) { Memory.assigned = {} }
     for (let i in Game.rooms) {
         let room = Game.rooms[i] as RoomWithEconomy;
         room.economy = new Economy(room);

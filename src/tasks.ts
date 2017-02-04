@@ -14,11 +14,163 @@ function hashCode (str : string) {
 };
 
 
-Tasks['harvest'] = {
+Tasks['mine'] = {
     make: function(creep : Creep) {
         var room    = creep.room;
         var sources = room.find(FIND_SOURCES) as [Source];
         var source  = sources[hashCode(creep.id) % sources.length];
+        return {task: 'mine', source: source.id}
+    },
+    run: function(creep : Creep, dt : any) {
+        var source = Game.getObjectById(dt.source) as Source;
+        if(creep.harvest(source) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(source);
+        }
+        return TaskIs.Running;
+    }
+}
+
+Tasks['drop'] = {
+    make: function(creep : Creep) {
+        var room    = creep.room;
+
+        var target = creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
+            filter: (structure: StructureContainer) => {
+                return structure.structureType == STRUCTURE_CONTAINER && structure.store.energy < structure.storeCapacity;
+            }
+        }) as Structure;
+
+        if (!target) {
+            return null;
+        }
+        return {task: 'drop', target: target.id}
+    },
+    run: function(creep : Creep, dt : any) {
+        var target = Game.getObjectById(dt.target) as StructureContainer;
+
+        if (!target) {
+            return TaskIs.Done;
+        }
+
+        let r = creep.transfer(target, RESOURCE_ENERGY);
+        switch (r) {
+            case ERR_NOT_IN_RANGE: {
+                creep.moveTo(target);
+                break;
+            }
+            case OK:
+                break;
+            default:
+                return TaskIs.Done;
+        }
+        return TaskIs.Running;
+    }
+}
+
+
+Tasks['pickup'] = {
+    make: function(creep : Creep) {
+        if (creep.carry.energy >= creep.carryCapacity) {
+            return null;
+        }
+
+        let targets = creep.room.find(FIND_DROPPED_ENERGY) as [Resource];
+        if (targets.length < 1) {
+            return null;
+        }
+
+        var target = targets[Math.floor(Math.random() * targets.length)];
+        return {task: 'pickup', target: target.id}
+    },
+    run: function(creep : Creep, dt : any) {
+        if (creep.carry.energy >= creep.carryCapacity) {
+            return TaskIs.Done;
+        }
+
+        let target = Game.getObjectById(dt.target) as Resource;
+        let r = creep.pickup(target);
+
+        switch (r) {
+            case ERR_NOT_IN_RANGE: {
+                creep.moveTo(target);
+                break;
+            }
+            case OK : {
+                break;
+            }
+            default: {
+                console.log(creep, "[ERR] pickup: ", r);
+                return TaskIs.Done;
+            }
+        }
+        return TaskIs.Running;
+    }
+};
+
+
+Tasks['take'] = {
+    make: function(creep : Creep) {
+
+        if (creep.carry.energy >= creep.carryCapacity) {
+            return null;
+        }
+
+        let targets = creep.room.find(FIND_MY_CREEPS, {
+            filter: (other: Creep) => {
+                return other.memory.role == 'miner' && other.carry.energy >= creep.carryCapacity;
+            }
+        }) as [Creep];
+
+        if (targets.length < 1) {
+            return null;
+        }
+
+        var target = targets[Math.floor(Math.random() * targets.length)];
+        return {task: 'take', target: target.name}
+    },
+    run: function(creep : Creep, dt : any) {
+        if (creep.carry.energy >= creep.carryCapacity) {
+            return TaskIs.Done;
+        }
+
+        var target = Game.creeps[dt.target];
+        if (!target) {
+            return TaskIs.Done;
+        }
+
+        if (target.carry.energy <= 0) {
+            return TaskIs.Done;
+        }
+
+        let r = target.transfer(creep, RESOURCE_ENERGY);
+
+        switch (r) {
+            case ERR_NOT_IN_RANGE: {
+                creep.moveTo(target);
+                break;
+            }
+            case OK : {
+                break;
+            }
+            default: {
+                console.log(creep, "[ERR] take: ", r);
+                return TaskIs.Done;
+            }
+        }
+        return TaskIs.Running;
+    }
+}
+
+Tasks['harvest'] = {
+    make: function(creep : Creep) {
+
+        if (creep.carry.energy >= creep.carryCapacity) {
+            return null;
+        }
+
+        let room    = creep.room;
+        let sources = room.find(FIND_SOURCES) as [Source];
+        let source  = sources[hashCode(creep.id) % sources.length];
         return {task: 'harvest', source: source.id}
     },
     run: function(creep : Creep, dt : any) {
@@ -78,7 +230,8 @@ Tasks['transfer'] = {
                 break;
             }
             default: {
-                console.log("[panic] creep.transfer: ", r);
+                console.log("[ERR] creep.transfer: ", r);
+                return TaskIs.Done;
             }
         }
         return TaskIs.Running;

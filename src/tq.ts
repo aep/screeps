@@ -35,7 +35,11 @@ class TaskQueue {
     }
 
     add(task: Todo) {
+        if (!task) {
+            return;
+        }
         this.creep.memory.tq.unshift(task);
+        Memory.assigned[task.target] = {creep: this.creep.name};
     }
     run() {
         if (this.creep.memory.tq.length < 1) {
@@ -48,11 +52,13 @@ class TaskQueue {
         } else {
             var taskRet = Tasks[task.task].run(this.creep, task);
             console.log(this.creep, task.task, taskRet);
-            this.creep.say(task.task);
+            //this.creep.say(task.task);
             switch (taskRet) {
-                case TaskIs.Done:
+                case TaskIs.Done: {
                     this.creep.memory.tq.pop();
-                break;
+                    delete Memory.assigned[task.target];
+                    break;
+                }
             }
         }
 
@@ -72,19 +78,36 @@ export var main = function() {
 
         if (cq.run() === TaskIs.Idle) {
             switch (creep.memory.role) {
-                case 'worker':
-                    if (creep.carry.energy == 0) {
-                        cq.add(Tasks['harvest'].make(creep));
-                        continue;
+                case 'miner': {
+                    if (creep.carry.energy >= creep.carryCapacity) {
+                        cq.add(Tasks['drop'].make(creep));
                     }
-                    let tt = (creep.room as RoomWithEconomy).economy.todo.shift();
-                    if (tt) {
-                        cq.add(tt)
-                    } else {
-                        cq.add(Tasks['upgrade'].make(creep));
-                    }
-
+                    cq.add(Tasks['mine'].make(creep));
                     break;
+                }
+                case 'worker': {
+                    let tt :Todo = null;
+                    if (creep.carry.energy <= 0) {
+                        tt = Tasks['pickup'].make(creep);
+                        if (!tt) {
+                            tt = Tasks['take'].make(creep);
+                        }
+                        if (!tt) {
+                            tt = Tasks['harvest'].make(creep);
+                        }
+                    }
+                    if (!tt) {
+                        tt = (creep.room as RoomWithEconomy).economy.todo.shift();
+                    }
+                    if (!tt) {
+                        tt = Tasks['upgrade'].make(creep);
+                    }
+                    if (tt) {
+                        creep.say(tt.task);
+                    }
+                    cq.add(tt)
+                    break;
+                }
             }
         }
     }
