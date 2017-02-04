@@ -3,7 +3,7 @@ var build = [
     {roles: {worker: 3, miner:  1}},
     {roles: {worker: 4, miner:  1}},
     {roles: {worker: 6, miner:  2}},
-    {roles: {worker: 6, miner:  2, stop: 1}}
+    {roles: {worker: 6, miner:  2, stopHack: 3}},
 ]
 
 var factory = function(spawn : StructureSpawn, role: string) {
@@ -47,6 +47,7 @@ var create = function(spawn : StructureSpawn) {
     for (let i in  build) {
         let stage = build[i];
         for (let role in stage.roles) {
+            if (!inRoom[role]) { inRoom[role] = 0; }
             if (inRoom[role] < stage.roles[role]) {
                 var dbgs = '';
                 for (var t in stage.roles) {

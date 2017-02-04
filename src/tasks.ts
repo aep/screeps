@@ -17,14 +17,14 @@ function hashCode (str : string) {
 Tasks['mine'] = {
     make: function(creep : Creep) {
         var room    = creep.room;
-        var sources = room.find(FIND_SOURCES) as [Source];
-        var source  = sources[hashCode(creep.id) % sources.length];
-        return {task: 'mine', source: source.id}
+        var targets = room.find(FIND_SOURCES) as [Source];
+        var target  = targets[Math.floor(Math.random() * targets.length)];
+        return {task: 'mine', target: target.id}
     },
     run: function(creep : Creep, dt : any) {
-        var source = Game.getObjectById(dt.source) as Source;
-        if(creep.harvest(source) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(source);
+        var target = Game.getObjectById(dt.target) as Source;
+        if(creep.harvest(target) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(target);
         }
         return TaskIs.Running;
     }
@@ -169,18 +169,18 @@ Tasks['harvest'] = {
         }
 
         let room    = creep.room;
-        let sources = room.find(FIND_SOURCES) as [Source];
-        let source  = sources[hashCode(creep.id) % sources.length];
-        return {task: 'harvest', source: source.id}
+        let targets = room.find(FIND_SOURCES) as [Source];
+        var target = targets[Math.floor(Math.random() * targets.length)];
+        return {task: 'harvest', target: target.id}
     },
     run: function(creep : Creep, dt : any) {
         if (creep.carry.energy >= creep.carryCapacity) {
             return TaskIs.Done;
         }
 
-        var source = Game.getObjectById(dt.source) as Source;
-        if(creep.harvest(source) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(source);
+        var target = Game.getObjectById(dt.target) as Source;
+        if(creep.harvest(target) == ERR_NOT_IN_RANGE) {
+            creep.moveTo(target);
         }
         return TaskIs.Running;
     }

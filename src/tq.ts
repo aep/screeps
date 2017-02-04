@@ -47,18 +47,16 @@ class TaskQueue {
         }
 
         var task : Todo = this.creep.memory.tq[this.creep.memory.tq.length - 1];
-        if (!Tasks[task.task]) {
-            this.creep.memory.tq.pop();
-        } else {
-            var taskRet = Tasks[task.task].run(this.creep, task);
-            console.log(this.creep, task.task, taskRet);
-            //this.creep.say(task.task);
-            switch (taskRet) {
-                case TaskIs.Done: {
-                    this.creep.memory.tq.pop();
-                    delete Memory.assigned[task.target];
-                    break;
-                }
+        var taskRet = Tasks[task.task].run(this.creep, task);
+        console.log(this.creep, task.task, taskRet);
+
+        //this.creep.say(task.task);
+        switch (taskRet) {
+            case TaskIs.Done: {
+                this.creep.memory.tq.pop();
+                Memory.assigned[task.target] = null;
+                delete Memory.assigned[task.target];
+                break;
             }
         }
 
