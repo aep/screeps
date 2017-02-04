@@ -1,6 +1,8 @@
 var tq = require('tq');
 
-function hashCode (str) {
+function hashCode (str : string) {
+    if (str === undefined)
+        return 0;
     var hash = 0, i, chr, len;
     if (str.length === 0) return hash;
     for (i = 0, len = str.length; i < len; i++) {
@@ -12,18 +14,18 @@ function hashCode (str) {
 };
 
 tq.Tasks['harvest'] = {
-    create: function(creep) {
+    create: function(creep : Creep) {
         var room    = creep.room;
-        var sources = room.find(FIND_SOURCES)
+        var sources = room.find(FIND_SOURCES) as [Source];
         var source  = sources[hashCode(creep.id) % sources.length];
         return {task: 'harvest', source: source.id}
     },
-    run: function(creep, dt) {
+    run: function(creep : Creep, dt : any) {
         if (creep.carry.energy >= creep.carryCapacity) {
             return tq.TASK_RET.DONE;
         }
 
-        var source = Game.getObjectById(dt.source);
+        var source = Game.getObjectById(dt.source) as Source;
         if(creep.harvest(source) == ERR_NOT_IN_RANGE) {
             creep.moveTo(source);
         }
@@ -32,14 +34,14 @@ tq.Tasks['harvest'] = {
 }
 
 tq.Tasks['deliver'] = {
-    create: function(creep) {
+    create: function(creep: Creep) {
         var targets = creep.room.find(FIND_STRUCTURES, {
-            filter: (structure) => {
+            filter: (structure: StructureSpawn | StructureTower) => {
                 return (structure.structureType == STRUCTURE_EXTENSION ||
                     structure.structureType == STRUCTURE_SPAWN ||
                     structure.structureType == STRUCTURE_TOWER) && structure.energy < structure.energyCapacity;
             }
-        });
+        }) as [Structure];
 
         if(targets.length < 1) {
             return null;
@@ -49,7 +51,7 @@ tq.Tasks['deliver'] = {
 
         return {task:'deliver', target: target.id}
     },
-    run: function(creep, dt) {
+    run: function(creep : Creep, dt : any) {
         if (creep.carry.energy <= 0) {
             return tq.TASK_RET.DONE;
         }
@@ -73,8 +75,8 @@ tq.Tasks['deliver'] = {
 }
 
 tq.Tasks['build'] = {
-    create: function(creep) {
-        var targets = creep.room.find(FIND_CONSTRUCTION_SITES);
+    create: function(creep : Creep) {
+        var targets = creep.room.find(FIND_CONSTRUCTION_SITES) as [ConstructionSite];
         if(targets.length < 1) {
             return null;
         }
@@ -83,7 +85,7 @@ tq.Tasks['build'] = {
 
         return {task:'build', target: target.id}
     },
-    run: function(creep, dt) {
+    run: function(creep : Creep, dt : any) {
         if (creep.carry.energy <= 0) {
             return tq.TASK_RET.DONE;
         }
@@ -104,12 +106,12 @@ tq.Tasks['build'] = {
 
 
 tq.Tasks['repair'] = {
-    create: function(creep) {
+    create: function(creep : Creep) {
         var targets = creep.room.find(FIND_STRUCTURES, {
-            filter: function(object){
+            filter: function(object: Structure){
                 return object.hits < (object.hitsMax * 0.8);
             }
-        });
+        }) as [Structure];
 
         if(targets.length < 1) {
             return null;
@@ -119,7 +121,7 @@ tq.Tasks['repair'] = {
 
         return {task:'build', target: target.id}
     },
-    run: function(creep, dt) {
+    run: function(creep : Creep, dt : any) {
         if (creep.carry.energy <= 0) {
             return tq.TASK_RET.DONE;
         }
@@ -143,10 +145,10 @@ tq.Tasks['repair'] = {
 }
 
 tq.Tasks['upgrade'] = {
-    create: function(creep) {
+    create: function(creep : Creep) {
         return {task: 'upgrade'}
     },
-    run: function(creep, dt) {
+    run: function(creep : Creep, dt : any) {
         if (creep.carry.energy <= 0) {
             return tq.TASK_RET.DONE;
         }

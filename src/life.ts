@@ -1,21 +1,21 @@
 var targets = {
     economy: {
-        harvester:  2,
+        harvester:  3,
         builder:    3,
-        maintainer: 1,
+        maintainer: 0,
     },
     army: {
-        brawler:   2,
-        claimer:   1,
+        brawler:   0,
+        claimer:   0,
     }
 }
 
 
-var factory = function(spawn, role) {
+var factory = function(spawn : StructureSpawn, role: string) {
     var r = null;
     switch (role) {
         case 'small-harvester':
-            r = spawn.createCreep([WORK,CARRY,MOVE], undefined, {role: 'harvester'});
+            r = spawn.createCreep([WORK, CARRY, MOVE], undefined, {role: 'harvester'});
             break;
         case 'builder':
         case 'harvester':
@@ -33,18 +33,18 @@ var factory = function(spawn, role) {
     return r;
 }
 
-var create = function(spawn) {
+var create = function(spawn : StructureSpawn) {
 
     var room   = spawn.room;
 
-    var inRoom = {}
-    var inGame = {}
+    var inRoom : any = {};
+    var inGame : any = {};
 
     for (var i in Game.creeps) {
         var creep = Game.creeps[i];
 
         inGame[creep.memory.role] = inGame[creep.memory.role] ? inGame[creep.memory.role] + 1 : 1
-        if (creep.room.id == room.id) {
+        if (creep.room.name == room.name) {
             inRoom[creep.memory.role] = inRoom[creep.memory.role] ? inRoom[creep.memory.role] + 1 : 1
         }
     }

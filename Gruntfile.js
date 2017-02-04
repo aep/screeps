@@ -2,9 +2,27 @@ var credentials = require('./credentials.js');
 
 module.exports = function(grunt) {
 
+
+    grunt.loadNpmTasks("grunt-ts");
     grunt.loadNpmTasks('grunt-screeps');
+    grunt.loadNpmTasks('grunt-contrib-copy');
 
     grunt.initConfig({
+        ts: {
+            default : {
+                src: ["src/**/*.ts", "!node_modules/**/*.ts"],
+                dest: 'dist',
+                tsconfig: true
+
+            }
+        },
+        copy: {
+            main: {
+                files: [
+                    {expand: true, cwd: 'src' ,src: ['**.js'], dest: 'dist/', filter: 'isFile'}
+                ]
+            }
+        },
         screeps: {
             options: {
                 email: credentials.email,
@@ -17,4 +35,5 @@ module.exports = function(grunt) {
             }
         }
     });
+    grunt.registerTask("default", ["ts", "copy", "screeps"]);
 }
