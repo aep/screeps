@@ -13,7 +13,7 @@ function eco(room : Room) {
 }
 
 
-module.exports.main = function() {
+export var main = function() {
     for (var i in Game.rooms) {
         var room = Game.rooms[i];
         if (room.controller.my) {

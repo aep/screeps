@@ -99,14 +99,10 @@ var gc = function() {
     }
 }
 
-var main = function() {
+export var main = function() {
     gc();
     for (var i in Game.spawns) {
         create(Game.spawns[i]);
     }
 }
-
-
-
-module.exports = {main : main}
 

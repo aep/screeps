@@ -1,4 +1,4 @@
-var main = function() {
+export var main = function() {
 
     var towers = _.filter(_.values(Game.structures), function (e) {
         return e.structureType == STRUCTURE_TOWER;
@@ -17,5 +17,3 @@ var main = function() {
         }
     })
 }
-
-module.exports = {main:main}

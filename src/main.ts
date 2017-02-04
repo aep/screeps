@@ -1,10 +1,8 @@
-var life          = require('life');
-var tq            = require('tq');
-var economy       = require('economy');
-var towers        = require('towers');
-
-
-require('tasks');
+import * as life    from './life';
+import * as tq      from './tq';
+import * as economy from './economy';
+import * as towers  from './towers';
+import './tasks';
 
 module.exports.loop = function () {
     life.main();

@@ -13,7 +13,6 @@ module.exports = function(grunt) {
                 src: ["src/**/*.ts", "!node_modules/**/*.ts"],
                 dest: 'dist',
                 tsconfig: true
-
             }
         },
         copy: {
@@ -31,7 +30,7 @@ module.exports = function(grunt) {
                 ptr: false
             },
             dist: {
-                src: ['src/*.js']
+                src: ['dist/*.js']
             }
         }
     });
