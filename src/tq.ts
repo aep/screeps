@@ -10,12 +10,12 @@ export enum TaskIs{
 export interface Todo {
     task:       string;
     target:     string;
-    priority:   number;
+    priority?:   number;
 }
 
 
 interface Task {
-    make(creep: Creep): any;
+    make(creep: Creep): Todo;
     run(creep: Creep, stored: Todo):  TaskIs;
 }
 
@@ -40,6 +40,15 @@ class TaskQueue {
         }
         this.creep.memory.tq.unshift(task);
         Memory.assigned[task.target] = {creep: this.creep.name};
+
+        this.creep.say(task.task);
+        let target = Game.getObjectById(task.target);
+        if (target) {
+            let rr = PathFinder.search(this.creep.pos, target.pos, {maxOps: 1000});
+            if (!rr.incomplete) {
+                this.creep.room.visual.poly(rr.path, {lineStyle: 'dashed', stroke: '#00ffff'});
+            }
+        }
     }
     run() {
         if (this.creep.memory.tq.length < 1) {
@@ -48,9 +57,8 @@ class TaskQueue {
 
         var task : Todo = this.creep.memory.tq[this.creep.memory.tq.length - 1];
         var taskRet = Tasks[task.task].run(this.creep, task);
-        console.log(this.creep, task.task, taskRet);
+        //console.log(this.creep, task.task, taskRet);
 
-        //this.creep.say(task.task);
         switch (taskRet) {
             case TaskIs.Done: {
                 this.creep.memory.tq.pop();
@@ -75,7 +83,22 @@ export var main = function() {
         var cq = new TaskQueue(creep);
 
         if (cq.run() === TaskIs.Idle) {
+            let tt = Tasks['renew'].make(creep);
+            if (tt) {
+                cq.add(tt);
+                return;
+            }
             switch (creep.memory.role) {
+                case 'brawler': {
+                    cq.add(Tasks['defend'].make(creep));
+                    break;
+                }
+                case 'claimer': {
+                    if (Game.flags['claim']) {
+                        cq.add(Tasks['claim'].make(creep));
+                    }
+                    break;
+                }
                 case 'miner': {
                     if (creep.carry.energy >= creep.carryCapacity) {
                         cq.add(Tasks['drop'].make(creep));
@@ -95,13 +118,10 @@ export var main = function() {
                         }
                     }
                     if (!tt) {
-                        tt = (creep.room as RoomWithEconomy).economy.todo.shift();
+                        tt = (creep.room as RoomWithEconomy).economy.getFor(creep);
                     }
                     if (!tt) {
                         tt = Tasks['upgrade'].make(creep);
-                    }
-                    if (tt) {
-                        creep.say(tt.task);
                     }
                     cq.add(tt)
                     break;

@@ -59,6 +59,19 @@ declare var FIND_HOSTILE_CONSTRUCTION_SITES: FindOp;
 declare var FIND_MINERALS:                   FindOp;
 declare var FIND_NUKES:                      FindOp;
 
+
+type LookOp = string;
+declare var LOOK_CREEPS:            LookOp;
+declare var LOOK_ENERGY:            LookOp;
+declare var LOOK_RESOURCES:         LookOp;
+declare var LOOK_SOURCES:           LookOp;
+declare var LOOK_MINERALS:          LookOp;
+declare var LOOK_STRUCTURES:        LookOp;
+declare var LOOK_FLAGS:             LookOp;
+declare var LOOK_CONSTRUCTION_SITES:LookOp;
+declare var LOOK_NUKES:             LookOp;
+declare var LOOK_TERRAIN:           LookOp;
+
 type BodyPart = string;
 declare var WORK:           BodyPart;
 declare var MOVE:           BodyPart;
@@ -148,8 +161,8 @@ interface RoomPosition {
     x:          number;
     y:          number;
 
-    findClosestByRange(find: FindOp | [RoomPosition], opts?: FilterOpts): RoomObject;
-    findClosestByPath(find: FindOp | [RoomPosition], opts?: FilterOpts): RoomObject;
+    findClosestByRange(find: FindOp | [RoomObject] | [RoomPosition], opts?: FilterOpts): RoomObject;
+    findClosestByPath(find:  FindOp | [RoomObject] | [RoomPosition], opts?: FilterOpts): RoomObject;
 }
 
 type Path = string;
@@ -204,7 +217,8 @@ interface Structure extends RoomObject {
 }
 
 interface OwnedStructure extends Structure {
-    my: boolean;
+    my:     boolean;
+    owner:  Owner;
 }
 
 interface StructureStorage extends OwnedStructure {
@@ -240,6 +254,8 @@ interface StructureSpawn extends OwnedStructure {
 
     canCreateCreep (body : [BodyPart], name: string) : StatusCode;
     createCreep    (body : [BodyPart], name: string, memory: any) : string|StatusCode;
+    recycleCreep(target: Creep): StatusCode;
+    renewCreep(target: Creep): StatusCode;
 }
 
 interface StructureExtension extends OwnedStructure{
@@ -265,6 +281,55 @@ interface StructureContainer extends OwnedStructure {
     transfer(target: Creep, resourceType : ResourceType, amount?: number): StatusCode;
 }
 
+
+interface LineStyle {
+    width?:      number;
+    color?:      string;
+    opacity?:    number;
+    lineStyle?:  string;
+}
+interface CircleStyle {
+    radius?: number;
+    fill?: string;
+    opacity?: number;
+    stroke?: string;
+    strokeWidth?: number;
+    lineStyle?: string;
+}
+interface RectStyle {
+    fill?:       string;
+    opacity?:    number;
+    stroke?:     string;
+    strokeWidth?: number;
+    lineStyle?:  string;
+}
+interface PolyStyle {
+    fill?:        string;
+    opacity?:     number;
+    stroke?:      string;
+    strokeWidth?: number;
+    lineStyle?:   string;
+}
+interface TextStyle {
+    color?: string;
+    size?:  string;
+    align?: string;
+    opacity?: number;
+}
+
+interface RoomVisual {
+    line(x1 : number, y1 : number, x2 : number, y2 : number, style?: LineStyle) : RoomVisual
+    line(pos1 : RoomPosition, pos2: RoomPosition, style?: LineStyle): RoomVisual
+    circle(x:number, y:number, style?: CircleStyle) : RoomVisual
+    circle(pos:RoomPosition, style?: CircleStyle) : RoomVisual
+    rect(x:number, y:number, width:number, hheight:number, style? : RectStyle) : RoomVisual
+    rect(topLeftPos: RoomPosition, width:number, hheight:number, style? : RectStyle) : RoomVisual
+    poly(points: [RoomPosition] | [[number,number]], style? : PolyStyle) : RoomVisual
+
+    text(text: string, x: number, y: number, style?: TextStyle) : RoomVisual
+    text(text: string, pos: RoomPosition, style?: TextStyle)    : RoomVisual
+}
+
 interface Room {
     controller:                 StructureController;
     energyAvailable:            number;
@@ -274,6 +339,7 @@ interface Room {
     name:                       string;
     storage:                    StructureStorage;
     terminal:                   StructureTerminal;
+    visual:                     RoomVisual;
 
     serializePath(path : [any]): string;
     deserializePath(path: string): any;
@@ -284,7 +350,9 @@ interface Room {
     createFlag(x : number, y : number, name? : string, color?: Color, secondaryColor? : Color) : StatusCode;
     createFlag(pos: RoomPosition, name? : string, color?: Color, secondaryColor? : Color) : StatusCode;
 
-    find(type: FindOp, opts? : FilterOpts) : [RoomObject];
+    find(typ: FindOp, opts? : FilterOpts) : [RoomObject];
+
+    lookForAtArea(typ: LookOp, top: number, left: number, bottom: number, right: number, asArray?: boolean): any;
 };
 
 
@@ -334,6 +402,14 @@ interface Carry {
     XGHO2:	number;
 }
 
+
+interface MoveToOptions {
+    reusePath?: number;
+    serializeMemory?: boolean;
+    noPathFinding?: boolean;
+    visualizePathStyle?: PolyStyle;
+}
+
 interface Creep extends RoomObject {
     body:           {type:string,hits:number,boost:string|undefined};
     carry:          Carry;
@@ -362,8 +438,8 @@ interface Creep extends RoomObject {
     getActiveBodyparts(part: BodyPart):             number;
     harvest(target: Source | Mineral ):             StatusCode;
     moveByPath(path: Path):                         StatusCode;
-    moveTo(x: number, y : number, opts?: {reusePath:number, serializeMemory: boolean, noPathFinding: boolean}): StatusCode;
-    moveTo(target: any, opts?: {reusePath:number, serializeMemory: boolean, noPathFinding: boolean}): StatusCode;
+    moveTo(x: number, y : number, opts?: MoveToOptions): StatusCode;
+    moveTo(target: any, opts?: MoveToOptions): StatusCode;
     notifyWhenAttacked(enabled : boolean):          StatusCode;
     pickup(target: Resource):                       StatusCode;
     rangedAttack(target: Creep | Structure):        StatusCode;
@@ -382,7 +458,7 @@ interface Creep extends RoomObject {
 interface Game {
     //constructionSites : {[key:string]: ConstructionSite}
     creeps: { [key: string] : Creep };
-    //flags:  { [key: string] : Flag};
+    flags:  { [key: string] : Flag};
     gcl: {
         level:          number,
         progress:       number,
@@ -406,6 +482,19 @@ interface Game {
     notify(message: string, groupInterval?: number): undefined;
 };
 
+
+interface PathFinder {
+    use(isEnabled: boolean): undefined
+    search(origin: RoomPosition, goal: RoomPosition | [RoomPosition], opts? : any) : {
+        path: [RoomPosition];
+        ops:  number;
+        cost: number;
+        incomplete: boolean;
+    }
+};
+
+
+declare var PathFinder: PathFinder;
 declare var Game:   Game;
 declare var Memory: any;
 type Element = null;

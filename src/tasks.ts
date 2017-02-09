@@ -14,17 +14,38 @@ function hashCode (str : string) {
 };
 
 
+function moveTo(creep: Creep, target: any) : StatusCode{
+    return creep.moveTo(target, {visualizePathStyle: {
+        stroke: '#fff',
+        lineStyle: 'dashed',
+        strokeWidth: .15,
+        opacity: .1
+    }});
+}
+
+
+
+
 Tasks['mine'] = {
     make: function(creep : Creep) {
-        var room    = creep.room;
-        var targets = room.find(FIND_SOURCES) as [Source];
-        var target  = targets[Math.floor(Math.random() * targets.length)];
+        let room    = creep.room;
+        let targets = room.find(FIND_SOURCES) as [Source];
+
+        var target = creep.pos.findClosestByPath(FIND_SOURCES, {
+            filter: (source: Source) => {
+                return !Memory.assigned[source.id];
+            }
+        }) as Source;
+
+        if (!target) {
+            return null;
+        }
         return {task: 'mine', target: target.id}
     },
     run: function(creep : Creep, dt : any) {
         var target = Game.getObjectById(dt.target) as Source;
         if(creep.harvest(target) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(target);
+            moveTo(creep,target);
         }
         return TaskIs.Running;
     }
@@ -55,7 +76,7 @@ Tasks['drop'] = {
         let r = creep.transfer(target, RESOURCE_ENERGY);
         switch (r) {
             case ERR_NOT_IN_RANGE: {
-                creep.moveTo(target);
+                moveTo(creep,target);
                 break;
             }
             case OK:
@@ -74,12 +95,10 @@ Tasks['pickup'] = {
             return null;
         }
 
-        let targets = creep.room.find(FIND_DROPPED_ENERGY) as [Resource];
-        if (targets.length < 1) {
+        var target = creep.pos.findClosestByPath(FIND_DROPPED_ENERGY) as Resource;
+        if (!target) {
             return null;
         }
-
-        var target = targets[Math.floor(Math.random() * targets.length)];
         return {task: 'pickup', target: target.id}
     },
     run: function(creep : Creep, dt : any) {
@@ -92,7 +111,7 @@ Tasks['pickup'] = {
 
         switch (r) {
             case ERR_NOT_IN_RANGE: {
-                creep.moveTo(target);
+                moveTo(creep,target);
                 break;
             }
             case OK : {
@@ -119,26 +138,36 @@ Tasks['take'] = {
             filter: (other: Creep) => {
                 return other.memory.role == 'miner' && other.carry.energy >= creep.carryCapacity;
             }
-        }) as [Creep];
+        }) as [StructureContainer];
 
+        if (targets.length < 1) {
+            targets = creep.room.find(FIND_STRUCTURES, {
+                filter: (other: StructureContainer) => {
+                    return other.structureType == STRUCTURE_CONTAINER && other.store.energy >= creep.carryCapacity;
+                }
+            }) as [StructureContainer];
+        }
         if (targets.length < 1) {
             return null;
         }
 
-        var target = targets[Math.floor(Math.random() * targets.length)];
-        return {task: 'take', target: target.name}
+
+        let target = creep.pos.findClosestByRange(targets) as StructureContainer;
+        return {task: 'take', target: target.id}
     },
     run: function(creep : Creep, dt : any) {
         if (creep.carry.energy >= creep.carryCapacity) {
             return TaskIs.Done;
         }
 
-        var target = Game.creeps[dt.target];
+        var target = Game.getObjectById(dt.target);
         if (!target) {
+            console.log(creep, "target not found", dt.target);
             return TaskIs.Done;
         }
 
-        if (target.carry.energy <= 0) {
+        if ((target.carry && target.carry.energy <= 0) || (target.store && target.store.energy <= 0)) {
+            console.log(creep, "target is empty");
             return TaskIs.Done;
         }
 
@@ -146,7 +175,7 @@ Tasks['take'] = {
 
         switch (r) {
             case ERR_NOT_IN_RANGE: {
-                creep.moveTo(target);
+                moveTo(creep,target);
                 break;
             }
             case OK : {
@@ -180,7 +209,7 @@ Tasks['harvest'] = {
 
         var target = Game.getObjectById(dt.target) as Source;
         if(creep.harvest(target) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(target);
+            moveTo(creep,target);
         }
         return TaskIs.Running;
     }
@@ -216,14 +245,14 @@ Tasks['transfer'] = {
         }
 
         if (target.energy >= target.energyCapacity) {
-            console.log("transfer: ",target,"already charged");
+            console.log(creep, "transfer: ", target, "already fully charged");
             return TaskIs.Done;
         }
 
         let r = creep.transfer(target, RESOURCE_ENERGY);
         switch (r) {
             case ERR_NOT_IN_RANGE: {
-                creep.moveTo(target);
+                moveTo(creep,target);
                 break;
             }
             case OK: {
@@ -261,7 +290,7 @@ Tasks['build'] = {
         }
 
         if(creep.build(target) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(target);
+            moveTo(creep,target);
         }
 
         return TaskIs.Running;
@@ -291,13 +320,12 @@ Tasks['repair'] = {
         }
 
         var target = Game.getObjectById(dt.target);
-
         if (!target) {
             return TaskIs.Done;
         }
 
         if(creep.repair(target) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(target);
+            moveTo(creep,target);
         }
 
         if (target.hits >= target.hitsMax) {
@@ -310,7 +338,7 @@ Tasks['repair'] = {
 
 Tasks['upgrade'] = {
     make: function(creep : Creep) {
-        return {task: 'upgrade'}
+        return {task: 'upgrade', target: creep.room + '.controller'}
     },
     run: function(creep : Creep, dt : any) {
         if (creep.carry.energy <= 0) {
@@ -318,7 +346,57 @@ Tasks['upgrade'] = {
         }
 
         if (creep.upgradeController(creep.room.controller) == ERR_NOT_IN_RANGE) {
-            creep.moveTo(creep.room.controller);
+            moveTo(creep,creep.room.controller);
+        }
+
+        return TaskIs.Running;
+    }
+}
+
+
+Tasks['renew'] = {
+    make: function(creep : Creep) {
+        //TODO renew is actually kinda shit, since it costs the same as spawning
+        return null;
+        /*
+        if (creep.ticksToLive > 500) {
+            return null;
+        }
+        var target = creep.pos.findClosestByPath(FIND_MY_STRUCTURES, {
+            filter: (structure: Structure) => {
+                return structure.structureType == STRUCTURE_SPAWN;
+            }
+        }) as StructureSpawn;
+        if (!target) {
+            return null;
+        }
+        return {task: 'renew', target: target.id}
+        */
+    },
+    run: function(creep : Creep, dt : any) {
+        if (creep.ticksToLive > 500) {
+            return TaskIs.Done;
+        }
+
+        var target = Game.getObjectById(dt.target) as StructureSpawn;
+        if (!target) {
+            console.log(creep, "renew: cannot find", dt.target);
+            return TaskIs.Done;
+        }
+
+        let r = target.renewCreep(creep);
+        switch (r) {
+            case ERR_NOT_IN_RANGE: {
+                moveTo(creep, target);
+                break;
+            }
+            case OK: {
+                break;
+            }
+            default: {
+                console.log("[ERR] creep.transfer: ", r);
+                return TaskIs.Done;
+            }
         }
 
         return TaskIs.Running;

@@ -8,12 +8,14 @@ export var main = function() {
         var closestHostile = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS) as Creep;
         if(closestHostile) {
             tower.attack(closestHostile);
+            return;
         }
         var closestDamagedStructure = tower.pos.findClosestByRange(FIND_STRUCTURES, {
-            filter: (structure : Structure) => structure.hits < structure.hitsMax && structure.hits < 100000
+            filter: (structure : Structure) => structure.hits < structure.hitsMax && structure.hits < Memory.config.upgradeWallsTo
         }) as Structure;
         if(closestDamagedStructure) {
             tower.repair(closestDamagedStructure);
+            return;
         }
     })
 }
